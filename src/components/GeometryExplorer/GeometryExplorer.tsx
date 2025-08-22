@@ -97,6 +97,7 @@ export default function GeometryExplorer() {
     console.log('📦 Geometría guardada:', geometryKey)
   }, [geometryKey])
 
+
   // Inicializar escena y mesh
   useEffect(() => {
     if (!mountRef.current) return
@@ -132,13 +133,25 @@ export default function GeometryExplorer() {
     dir.position.set(5, 5, 5)
     scene.add(ambient, dir)
 
-  // Mesh principal según geometría seleccionada
-  const geoObj = GEOMETRIES[geometryKey]
-  const geometry = geoObj.create()
-  const material = new THREE.MeshPhongMaterial({ color: geoObj.color, wireframe: wireframeRef.current })
-  const mesh = new THREE.Mesh(geometry, material)
-  currentMeshRef.current = mesh
-  scene.add(mesh)
+    // Mesh principal según geometría seleccionada
+    const geoObj = GEOMETRIES[geometryKey]
+    const geometry = geoObj.create()
+    const material = new THREE.MeshPhongMaterial({ color: geoObj.color, wireframe: wireframeRef.current })
+    const mesh = new THREE.Mesh(geometry, material)
+
+    // Restaurar rotación desde localStorage si existe
+    const rotStr = localStorage.getItem('meshRotation')
+    if (rotStr) {
+      try {
+        const rot = JSON.parse(rotStr)
+        if (rot && typeof rot.x === 'number' && typeof rot.y === 'number' && typeof rot.z === 'number') {
+          mesh.rotation.set(rot.x, rot.y, rot.z)
+        }
+      } catch {}
+    }
+
+    currentMeshRef.current = mesh
+    scene.add(mesh)
 
     // Helpers
     const axes = new THREE.AxesHelper(2)
@@ -151,6 +164,9 @@ export default function GeometryExplorer() {
       if (autoRotateRef.current && currentMeshRef.current) {
         currentMeshRef.current.rotation.x += 0.01
         currentMeshRef.current.rotation.y += 0.015
+        // Guardar rotación en localStorage
+        const r = currentMeshRef.current.rotation
+        localStorage.setItem('meshRotation', JSON.stringify({ x: r.x, y: r.y, z: r.z }))
       }
       renderer.render(scene, camera)
     }
